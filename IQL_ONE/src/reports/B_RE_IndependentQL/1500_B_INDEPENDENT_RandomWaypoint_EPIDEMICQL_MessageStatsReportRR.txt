@@ -1,0 +1,38 @@
+Message stats for scenario 1500_B_INDEPENDENT_RandomWaypoint_EPIDEMICQL
+sim_time: 43200.1000
+created: 1221
+started: 47313
+relayed: 47202
+aborted: 111
+dropped: 352
+removed: 46036
+delivered: 1203
+delivery_prob: 0.9853
+response_prob: 0.0000
+overhead_ratio: 38.2369
+latency_avg: 650.8921
+latency_med: 606.3000
+hopcount_avg: 3.2677
+hopcount_med: 3
+buffertime_avg: 573.5581
+buffertime_med: 509.1000
+rtt_avg: NaN
+rtt_med: NaN
+-----------------------------------------------------------------------------------
+
+p13	22
+p40	29
+p18	2
+p7	2
+p9	5
+p10	2
+p16	14
+p20	17
+p31	11
+p32	9
+p6	21
+p35	20
+p36	1
+p4	1
+p21	195
+p30	1
