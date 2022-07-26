@@ -1,13 +1,11 @@
 
 ## Scenario settings
-# Scenario.name = RandomWaypoint_EPIDEMICRR
-# Scenario.name = RandomWaypoint_EPIDEMICORI
-Scenario.name = INDEPENDENT_RandomWaypoint_EPIDEMICQL
+Scenario.name = 25_M_INDEPENDENT_RandomWaypoint_EPIDEMICQL
 
 Scenario.simulateConnections = true
 Scenario.updateInterval = 0.1
 # 43200s == 12h
-Scenario.endTime = 43200
+Scenario.endTime = 274883
 
 
 ## Interface-specific settings:
@@ -49,10 +47,8 @@ Scenario.nrofHostGroups = 1
 
 # Common settings for all groups
 Group.movementModel = RandomWaypoint
-# Group.router = EpidemicRouterWithRR
-# Group.router = EpidemicRouter
 Group.router = EpidemicForQL
-Group.bufferSize = 500k
+Group.bufferSize = 250k
 Group.waitTime = 0, 120
 # All nodes have the bluetooth interface
 Group.nrofInterfaces = 1
@@ -76,7 +72,9 @@ Events.nrof = 1
 Events1.class = MessageEventGenerator
 # (following settings are specific for the MessageEventGenerator class)
 # Creation interval in seconds (one new message every 25 to 35 seconds)
-Events1.interval = 25,35
+# HAGGLE MI 100-500, RANDOM MI 25-125
+# HAGGLE BUFFER -> MI 300, RANDOM BUFFER -> MI 50
+Events1.interval = 25
 # Message sizes (500kB - 1MB)
 Events1.size = 50k
 # range of message source/destination addresses
@@ -98,21 +96,25 @@ MovementModel.warmup = 1000
 ## Reports - all report names have to be valid report classes
 
 # how many reports to load
-Report.nrofReports = 4
+Report.nrofReports = 3
 # length of the warm up period (simulated seconds)
 Report.warmup = 0
 # default directory of reports (can be overridden per Report with output setting)
-Report.reportDir = reports/B_RE_IndependentQL
+# Report.reportDir = reports/B_RE_IndependentQL
+Report.reportDir = reports/M_RE_IndependentQL
 
 # Report classes to load
 Report.report1 = MessageStatsReportRR
 Report.report2 = CVPerNodePerTimeReport
 Report.report3 = QVReport_Epidemic
-Report.report4 = TotalActionDetect
+
 
 # Settings for the IQLCC
-eIQLCC.stateInterval = 180
+eIQLCC.stateInterval = 1200
 eIQLCC.ai = 1
 eIQLCC.md = 0.2
 eIQLCC.k = 2
 eIQLCC.alphaCV = 0.9
+eIQLCC.bolztmannConsValue = 0.01
+eIQLCC.CTH = 0.5
+eIQLCC.NCTH = 0.1

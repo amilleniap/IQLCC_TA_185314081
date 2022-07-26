@@ -21,7 +21,7 @@ import java.util.Set;
  * Epidemic message router with drop-oldest buffer and only single transferring
  * connections at a time.
  */
-public class EpidemicForQL extends Epidemic_QLCC_Independent {
+public class EpidemicForQL extends Epidemic_IQLCC {
 
 	public EpidemicForQL(Settings s) {
 		super(s);
@@ -60,5 +60,7 @@ public class EpidemicForQL extends Epidemic_QLCC_Independent {
 	public EpidemicForQL replicate() {
 		return new EpidemicForQL(this);
 	}
+
+	
 
 }

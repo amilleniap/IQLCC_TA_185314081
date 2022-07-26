@@ -19,7 +19,7 @@ public class QVReport_Epidemic extends Report {
 		List<DTNHost> hosts = SimScenario.getInstance().getHosts();
 		String write = " ";
 		double hostsize = hosts.size();
-		double[][] totalQV = new double[4][7];
+		double[][] totalQV = new double[4][8];
 		for (DTNHost h : hosts) {
 			
 			MessageRouter mr = h.getRouter();
