@@ -14,24 +14,24 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 
 	/** Epidemic_IQLCC router's setting namespace ({@value}) */
 	public static final String Epidemic_IQLCC_NS = "eIQLCC";
-	/** AI (addiptive increase) - setting id (@value) */
+	/** AI (additive increase) - setting id (@value) */
 	public static final String AI_S = "ai";
 	/** MD (multiplicative decrease) - setting id (@value) */
 	public static final String MD_S = "md";
 	/** Alpha for CV's learning rate - setting id (@value) */
 	public static final String ALPHA_CV_S = "alphaCV";
 	/**
-	 * constant K for decrease or increase message generation rate - setting id
+	 * constant K for message generation period (action 4 & 5) - setting id
 	 * (@value)
 	 */
 	public static final String K_S = "k";
 	/** minimum time for update new state (window) - setting id (@value) */
 	public static final String STATE_UPDATE_INTERVAL_S = "stateInterval";
-	/** boltzman value */
+	/** boltzmann value - setting id (@value) */
 	public static final String BOLTZMANN_C_S = "boltzmannConsValue";
-	/** Congestion Threshold for State Update */
+	/** Congestion Threshold for state update - setting id (@value) */
 	public static final String CTH_S = "CTH";
-	/** Non- Congestion Threshold for State Update */
+	/** Non- Congestion Threshold for state update - setting id (@value) */
 	public static final String NCTH_S = "NCTH";
 	
 	/** default value for ai */
@@ -60,7 +60,8 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 	/** check if  the message has the oldest receiving time*/
 	public boolean dropByOldestReceivingTime = true;
 
-	/** set the queue to drop messages based on rate, reps and ttl */
+	/** determine which queue mode used for dropping messages 
+	 * based on rate, reps and ttl */
 	public int deleteQueueMode;
 
 	/** value of md setting */
@@ -71,22 +72,22 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 	private double alpha;
 	/** value of stateUpdateInterval setting */
 	private double stateUpdateInterval;
-	/** value of boltzmann constant C setting */
+	/** value of boltzmann setting */
 	private double boltzmann;
 	/** value of CTH setting */
 	private double CTH;
 	/** value of NCTH setting */
 	private double NCTH;
 
-	/** dumb variable to count number of reps */
+	/** dummy variable to count number of reps */
 	private int nrofreps = 0;
-	/** dumb variable to count number of drops */
+	/** dummy variable to count number of drops */
 	private int nrofdrops = 0;
-	/** dumb variable to count number of reps other hosts */
+	/** dummy variable to count reps number of the other hosts */
 	private int otherNrofReps = 0;
-	/** dumb variable to count number of drops other hosts */
+	/** dummy variable to count number of drops number of the other hosts */
 	private int otherNrofDrops = 0;
-	/** to count limit for a connection */
+	/** to count msg limit for each connection */
 	private int msglimit = 1;
 
 	/** ratio of drops and reps */
@@ -96,13 +97,14 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 	 */
 	private double CV = 0;
 
-	/** a map to save information about a connection and its limits to send */
+	/** a map to record information about a connection and its limit */
 	private Map<Connection, Integer> conlimitmap;
 
-	/** dumb variable to count interval to count the new CV */
+	/** dummy variable to set the interval to count the new CV
+	 * to detect the new state */
 	private double LastUpdateTimeofState  = 0;
 
-	/** for cv and time interface */
+	/** needed for CV report*/
 	private List<CVandTime> cvandtime;
 
 	/** buffer that save receipt */
@@ -136,22 +138,23 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 	/** init state for Prospective congested */
 	private static final int PC = 3;
 
-	/**
-	 * a variable to save information the current oldstate. at first, it has value
-	 * -1, so the router able to know if it is the first time to observe the
-	 * environment and set a state
+	/** For the first time, the state value is set to
+	 * -1 to tell the node that this is the first time to do the learning. 
+	 *  The node only need to observe the current state and choose an action
+	 *  to receive the first q-value.
 	 */
 	protected int oldstate = -1;
 
-	/** for save an information about the last selection action */
+	/** to save the information about the last selected action */
 	protected int actionChosen;
 
 	/** message generation interval in seconds */
 	protected double msggenerationinterval = 600;
-	/** constant k for increase or decrease message generation rate */
+	
+	/** constant k for increase or decrease message generation period */
 	private double k = 2;
 
-	/** for record the last time of message creation */
+	/** to record the last time of message creation */
 	private double endtimeofmsgcreation = 0;
 
 	/** message property to record its number of copies */
@@ -247,9 +250,7 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 		msgreadytodelete();
 	}
 
-	/**
-	 * Initializes predictability hash
-	 */
+	/** Initializes exploration policy*/
 	protected void explorationPolicy() {
 		this.explorationPolicy = new BoltzmannExploration(1);
 	}
@@ -282,6 +283,8 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 		if (con.isUp()) {
 
 			connectionUp(con);
+			
+			/*peer's router */
 			DTNHost otherHost = con.getOtherNode(getHost());
 
 			conlimitmap.put(con, this.msglimit);
@@ -316,7 +319,8 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 			connectionDown(con);
 			DTNHost otherHost = con.getOtherNode(getHost());
 			Epidemic_IQLCC peerRouter = (Epidemic_IQLCC) otherHost.getRouter();
-
+			/* record the peer's nrofdrops & nrofreps 
+			 * as otherNrofDrops & otherNrofReps  */
 			otherNrofDrops += peerRouter.getNrofDrops();
 			otherNrofReps += peerRouter.getNrofReps();
 			conlimitmap.remove(con);
@@ -324,6 +328,7 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 		}
 	}
 
+	/** before deleting the message, check if the message is being sent*/
 	public void deletemsg(String msgID, boolean dropchecking) {
 		if (isSending(msgID)) {
 			List<Connection> conList = getConnections();
@@ -337,13 +342,14 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 		deleteMessage(msgID, dropchecking);
 	}
 
+	/** update the CV and choose the action */
 	@Override
 	public void update() {
 		super.update();
 		if ((SimClock.getTime() - LastUpdateTimeofState ) >= stateUpdateInterval) {
 
 			double newCV = countcv();
-			CVandTime nilaicv = new CVandTime(this.CV, SimClock.getTime());
+			CVandTime nilaicv = new CVandTime(newCV, SimClock.getTime());
 			cvandtime.add(nilaicv);
 			if (this.oldstate == -1) {
 				oldstate = staterequirement(this.CV, newCV);
@@ -365,7 +371,8 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 		if (exchangeDeliverableMessages() != null) {
 			return;
 		}
-
+		
+		/** use it in the routing class */
 		// tryAllMessageToAllConections();
 	}
 
@@ -390,7 +397,8 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 			}
 		}
 	}
-
+	
+	/* the procedure of updating the state*/
 	protected void updateState(int newstate) {
 
 		double reward = checkReward(oldstate, newstate);
@@ -448,6 +456,7 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 		}
 	}
 
+	/** state transition's requirement */
 	protected int staterequirement(double oldcv, double newcv) {
 		if (newcv >= CTH) {
 			return C; //0.1 (haggle), 0.5 (rwp)
@@ -468,12 +477,18 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 		if (!con.isReadyForTransfer()) {
 			return TRY_LATER_BUSY;
 		}
+		/* start transferring if the connection still has the remaining msg limit*/
 		if (conlimitmap.containsKey(con)) {
 			retVal = con.startTransfer(getHost(), m);
 			if (retVal == RCV_OK) { // started transfer
 				addToSendingConnections(con);
+				/* set the limit left from a connection as a remaining limit*/
 				int remaininglimit = conlimitmap.get(con);
+				/* if the message can be transferred, limit decreased by 1*/
 				remaininglimit = remaininglimit - 1;
+				/* if there's still any limit left, set the remaining limit as the new one.
+				 * if there's no any limit left, remove the connection to prevent the node 
+				 * from a sending a message to the connection.*/
 				if (remaininglimit != 0) {
 					conlimitmap.replace(con, remaininglimit);
 				} else {
@@ -499,6 +514,9 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 
 		int freeBuffer = this.getFreeBufferSize();
 		/* delete messages from the buffer until there's enough space */
+		
+		/* if dropByOldestReceivingTime is true, message are deleted by the oldest
+		 * receiving time, if it's false, message are deleted based on the delete queue mode*/
 		if (dropByOldestReceivingTime) {
 			while (freeBuffer < size) {
 				Message m = getOldestMessage(true); // don't remove msgs being sent
@@ -535,12 +553,14 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 		
 	}
 
+	/** to sort delete queue */
 	@SuppressWarnings(value = "unchecked") /* ugly way to make this generic */
 	protected List deleteSortByQueueMode(List list) {
 		switch (deleteQueueMode) {
+		/** Compares messages by the highest rate */
 		case Q_MODE_RATE:
 			Collections.sort(list, new Comparator() {
-				/** Compares two tuples by their messages' receiving time */
+				
 				public int compare(Object o1, Object o2) {
 					double diff;
 					Message m1, m2;
@@ -574,7 +594,7 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 			break;
 		case Q_MODE_REPS:
 			Collections.sort(list, new Comparator() {
-				/** Compares two tuples by their messages' receiving time */
+				/** Compares messages by the highest number of replications */
 				public int compare(Object o1, Object o2) {
 					double diff;
 					Message m1, m2;
@@ -606,7 +626,7 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 			break;
 		case Q_MODE_TTL:
 			Collections.sort(list, new Comparator() {
-				/** Compares two tuples by their messages' receiving time */
+				/** Compares messages by the oldest TTL */
 				public int compare(Object o1, Object o2) {
 					double diff;
 					Message m1, m2;
@@ -645,11 +665,13 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 	}
 
 	@Override
-	public boolean createNewMessage(Message m) {
 
+	public boolean createNewMessage(Message m) {
 		if (this.endtimeofmsgcreation == 0
 				|| SimClock.getTime() - this.endtimeofmsgcreation >= this.msggenerationinterval) {
 			this.endtimeofmsgcreation = SimClock.getTime();
+			/* added repsproperty to count the 
+			 * number of replications for a new message*/
 			m.addProperty(repsproperty, 1);
 			return super.createNewMessage(m);
 		}
@@ -665,7 +687,8 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 
 		aCopy.updateProperty(repsproperty, msgprop);
 
-		// number of replication increased by 1
+		// replications are counted by successful incoming replications.
+		// +1 for 1 rep./
 		nrofreps++;
 		// ack
 		if (isFinalDest(aCopy, this.getHost()) && !receiptBuffer.containsKey(aCopy.getId())) {
@@ -690,13 +713,13 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 		return totalhops;
 	}
 
-	/** count CV */
+	/** calculate the CV */
 	protected double countcv() {
 		int totalhops = msgtotalhops();
 		int totaldrop = this.nrofdrops + this.otherNrofDrops;
 		int totalreps = this.nrofreps + totalhops + this.otherNrofReps;
 
-		// reset
+		// reset 
 		nrofdrops = 0;
 		nrofreps = 0;
 		otherNrofDrops = 0;
@@ -718,6 +741,7 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 		return m.getTo().equals(thisHost);
 	}
 
+	/** IQL reward */
 	protected double checkReward(int olds, int news) {
 		if (olds == NC && news == PC) {
 			return -1.0;
@@ -739,7 +763,7 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 
 	}
 
-	/* QL ACTION METHODS */
+	/** IQL ACTION METHODS */
 	private void dropbasedonhighestrate() {
 		dropByOldestReceivingTime = false;
 		deleteQueueMode = Q_MODE_RATE;
@@ -802,6 +826,7 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 	}
 
 	@Override
+	/* needed for CV report */
 	public List<CVandTime> getCVandTime() {
 		return this.cvandtime;
 	}
@@ -809,6 +834,7 @@ public abstract class Epidemic_IQLCC extends ActiveRouter implements CVDetection
 
 	@Override
 	public double[][] getQV() {
+	/* to record the q-values */
 		return this.QL.getqvalues();
 	}
 
